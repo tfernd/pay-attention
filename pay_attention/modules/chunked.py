@@ -25,7 +25,7 @@ def batch_chunked(
     """
 
     assert chunks >= 1
-    B, T, Cp = *q.shape[:2], v.size(2)
+    B, T, C, Tp, Cp = *q.shape, *v.shape[1:]
 
     out = torch.empty(B, T, Cp, dtype=q.dtype, device=q.device)  # (B, T, C')
     for i in range(0, B, chunks):
@@ -58,7 +58,7 @@ def sequence_chunked(
     """
 
     assert chunks >= 1
-    B, T, Cp = *q.shape[:2], v.size(2)
+    B, T, C, Tp, Cp = *q.shape, *v.shape[1:]
 
     out = torch.empty(B, T, Cp, dtype=q.dtype, device=q.device)  # (B, T, C')
     for i in range(0, T, chunks):
@@ -88,7 +88,8 @@ def batch_and_sequence_chunked(
     approaches. This function allows chunking over both the
     batch and sequence dimensions.
     """
-    B, T, Cp = *q.shape[:2], v.size(2)
+
+    B, T, C, Tp, Cp = *q.shape, *v.shape[1:]
 
     batch_chunks = batch_chunks or B
     seq_chunks = seq_chunks or T
@@ -97,7 +98,6 @@ def batch_and_sequence_chunked(
     assert seq_chunks >= 1
 
     out = torch.empty(B, T, Cp, dtype=q.dtype, device=q.device)  # (B, T, C')
-
     for i in range(0, B, batch_chunks):
         torch.cuda.nvtx.range_push(f"batch-iter={i}")
 

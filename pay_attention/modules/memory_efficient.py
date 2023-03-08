@@ -17,15 +17,22 @@ def memory_efficient(
     k_chunks: int = 4_096,
 ) -> Tensor:  # (B, T, C')
     """
-    This function computes the scaled dot product attention between a set of queries, keys and values using a memory-efficient algorithm. The implementation is almost identical to the one proposed in the paper, with additional masking and adding bias compatibility, batch dimensions support and PyTorch implementation.
-    For computing attention, the proposed method requires only O(sqrt(n)) memory, making it a drop-in replacement for attention calculation that provides significant memory savings.
-    To optimize for memory consumption and runtime, the function provides the `key_chunk_size` and `query_chunk_size` parameters which should be adjusted to the best configuration for the specific use case.
+    This function computes the scaled dot product attention between a set
+    of queries, keys and values using a memory-efficient algorithm. The
+    implementation is almost identical to the one proposed in the paper,
+    with additional masking and adding bias compatibility, batch dimensions
+    support and PyTorch implementation.
+    For computing attention, the proposed method requires only O(sqrt(n))
+     memory, making it a drop-in replacement for attention calculation that
+     provides significant memory savings.
+    To optimize for memory consumption and runtime, the function provides
+    the `key_chunk_size` and `query_chunk_size` parameters which should be
+    adjusted to the best configuration for the specific use case.
     """
-    
-    B, T, C = q.shape
-    B, Tp, Cp = v.shape
 
-    out = torch.empty(B, T, Cp, device=q.device, dtype=q.dtype)
+    B, T, C, Tp, Cp = *q.shape, *v.shape[1:]
+
+    out = torch.empty(B, T, Cp, device=q.device, dtype=q.dtype)  # (B, T, C')
     for i in trange(0, T, q_chunks):
         si = slice(i, min(i + q_chunks, T))
 

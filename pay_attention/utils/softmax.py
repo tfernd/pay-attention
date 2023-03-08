@@ -9,7 +9,7 @@ def softmax(
     inplace: bool,
 ) -> Tensor:
     # TODO doc-string
-    
+
     if not inplace:
         return x.softmax(dim=-1, dtype=x.dtype)
 

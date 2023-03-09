@@ -9,8 +9,8 @@ from torch import Tensor
 
 def scaled(
     q: Tensor,  # (..., C)
-    inplace: bool = False
-) -> Tensor:# (..., C)
+    inplace: bool = False,
+) -> Tensor:  # (..., C)
     """
     The scaled function scales the input tensor by multiplying
     it with the scaling factor. The scaling factor is calculated
@@ -24,20 +24,23 @@ def scaled(
 
     return q * scale if not inplace else q.mul_(scale)
 
+
 # TODO code duplication
 def scaled_memory(
-    x: Tensor,  # (..., C)
+    shape: tuple[int, ...],
+    dtype: torch.dtype,
     inplace: bool = False,
 ) -> int:
     if inplace:
         return 0
 
-    assert x.dtype in (torch.float32, torch.half)
+    assert dtype in (torch.float32, torch.half)
+    assert len(shape) >= 2
 
-    *shape, C = x.shape
-    B = np.prod(shape).item()
+    *pre_shape, C = shape
+    B = np.prod(pre_shape).item()
 
-    element_size = 4 if x.dtype == torch.float32 else 2
+    element_size = 4 if dtype == torch.float32 else 2
 
     # magic number that takes into account non-power of 2 B's ans C's
     MAGIC = 1.0035

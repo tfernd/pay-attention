@@ -22,6 +22,7 @@ def memory_used(
     clear_cuda(device)
 
     allocated_list: list[int] = []
+
     def continous_pooling(exit_flag: threading.Event) -> None:
         # Continuously measure the allocated memory while the exit flag is not set.
         while not exit_flag.is_set():
@@ -38,7 +39,7 @@ def memory_used(
     for _ in range(repeats):
         function(*args, **kwargs)
 
-        if len(allocated_list) >=1 and max(allocated_list) > initial_allocated_memory:
+        if len(allocated_list) >= 1 and max(allocated_list) > initial_allocated_memory:
             break
 
     clear_cuda(device)

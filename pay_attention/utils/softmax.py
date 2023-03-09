@@ -10,7 +10,7 @@ from torch import Tensor
 def softmax(
     x: Tensor,  # (..., C)
     inplace: bool = False,
-) -> Tensor:# (..., C)
+) -> Tensor:  # (..., C)
     """Applies the softmax function to the input tensor `x` along the last dimension."""
 
     if not inplace:
@@ -25,19 +25,21 @@ def softmax(
 
 # TODO code duplication
 def softmax_memory(
-    x: Tensor,  # (..., C)
+    shape: tuple[int, ...],
+    dtype: torch.dtype,
     inplace: bool = False,
 ) -> int:
-    assert x.dtype in (torch.float32, torch.half)
+    assert dtype in (torch.float32, torch.half)
+    assert len(shape) >= 2
 
-    *shape, C = x.shape
-    B = np.prod(shape).item()
+    *pre_shape, C = shape
+    B = np.prod(pre_shape).item()
 
-    element_size = 4 if x.dtype == torch.float32 else 2
+    element_size = 4 if dtype == torch.float32 else 2
 
     if inplace:
-        min_size = 128 if x.dtype == torch.float32 else 256 # cache size? warp-size?
-        
+        min_size = 128 if dtype == torch.float32 else 256  # cache size? warp-size?
+
         B += min_size - B % min_size
 
         return element_size * B

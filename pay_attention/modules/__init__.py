@@ -6,3 +6,5 @@ from .chunked_attention import (
     batch_and_sequence_chunked_attention,
     batch_and_sequence_chunked_attention_memory,
 )
+
+from .xformers_attention import xformers_attention, XFORMERS

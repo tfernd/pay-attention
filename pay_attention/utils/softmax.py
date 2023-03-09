@@ -23,6 +23,7 @@ def softmax(
     return x
 
 
+# TODO code duplication
 def softmax_memory(
     x: Tensor,  # (..., C)
     inplace: bool = False,
@@ -42,6 +43,6 @@ def softmax_memory(
         return element_size * B
 
     # magic number that takes into account non-power of 2 B's ans C's
-    MAGIC = 1.01
+    MAGIC = 1.011
 
     return math.ceil(element_size * B * C * MAGIC)

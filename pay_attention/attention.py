@@ -4,7 +4,7 @@ from torch import Tensor
 
 from .utils import available_memory
 from .modules import standard_attention, standard_attention_memory
-from .modules import batch_and_sequence_chunked_attention, batch_and_sequence_chunked_attention_memory
+from .modules import chunked_attention, chunked_attention_memory
 from .modules import xformers_attention, XFORMERS
 
 
@@ -28,7 +28,7 @@ def attention(
     if XFORMERS and C == Cp and C <= 128:
         return xformers_attention(q, k, v)
 
-    free_mem = available_memory() # TODO M1 devices?
+    free_mem = available_memory(device=q.device)  # TODO M1 devices?
 
     # Try standard attention
     for inplace in [False, True]:
@@ -41,12 +41,10 @@ def attention(
     out: list[tuple[int, int, bool, int]] = []
     for inplace in [False, True]:
         for batch_chunks in range(1, B + 1):
-            for i in range(1, 16): # splits # TODO use multiples of 128?
+            for i in range(1, 16):  # splits # TODO use multiples of 128?
                 seq_chunks = T // i
 
-                mem = batch_and_sequence_chunked_attention_memory(
-                    q.shape, v.shape, batch_chunks, seq_chunks, q.dtype, inplace
-                )
+                mem = chunked_attention_memory(q.shape, v.shape, q.dtype, batch_chunks, seq_chunks, inplace)
                 if mem > free_mem:
                     continue
 
@@ -56,4 +54,4 @@ def attention(
 
     batch_chunks, seq_chunks, inplace, _ = out[0]
 
-    return batch_and_sequence_chunked_attention(q, k, v, batch_chunks, seq_chunks, inplace)
+    return chunked_attention(q, k, v, batch_chunks, seq_chunks, inplace)

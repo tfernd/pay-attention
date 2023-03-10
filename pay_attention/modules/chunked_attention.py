@@ -7,7 +7,7 @@ from torch import Tensor
 from .standard_attention import standard_attention, standard_attention_memory
 
 
-def batch_and_sequence_chunked_attention(
+def chunked_attention(
     q: Tensor,  # (B, T, C)
     k: Tensor,  # (B, T', C)
     v: Tensor,  # (B, T', C')
@@ -31,6 +31,8 @@ def batch_and_sequence_chunked_attention(
     assert B >= batch_chunks >= 1
     assert T >= seq_chunks >= 1
 
+    from tqdm.auto import trange as range
+
     out = torch.empty(B, T, Cp, dtype=q.dtype, device=q.device)  # (B, T, C')
     for i in range(0, B, batch_chunks):
         si = slice(i, min(i + batch_chunks, B))
@@ -44,12 +46,12 @@ def batch_and_sequence_chunked_attention(
     return out
 
 
-def batch_and_sequence_chunked_attention_memory(
+def chunked_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C')
-    batch_chunks: int,
-    seq_chunks: int,
     dtype: torch.dtype,
+    batch_chunks: Optional[int] = None,
+    seq_chunks: Optional[int] = None,
     inplace: bool = False,
 ) -> int:
     """
@@ -62,6 +64,12 @@ def batch_and_sequence_chunked_attention_memory(
     B, T, C = q_shape
     B, Tp, Cp = v_shape
 
+    batch_chunks = batch_chunks or B
+    seq_chunks = seq_chunks or T
+
+    assert B >= batch_chunks >= 1
+    assert T >= seq_chunks >= 1
+    
     element_size = 4 if dtype == torch.float32 else 2
 
     q_chunk_shape = (batch_chunks, seq_chunks, C)
@@ -71,41 +79,3 @@ def batch_and_sequence_chunked_attention_memory(
     size += standard_attention_memory(q_chunk_shape, v_chunk_shape, dtype, inplace)
 
     return size
-
-
-def batch_chunked_attention(
-    q: Tensor,  # (B, T, C)
-    k: Tensor,  # (B, T', C)
-    v: Tensor,  # (B, T', C')
-    chunks: int,
-    inplace: bool = False,
-) -> Tensor:  # (B, T, C')
-    """
-    The batch_chunked function computes the attention mechanism
-    between query, key, and value tensors using the batch-chunked
-    approach. It iterates over the batches in chunks and computes the attention
-    scores, applies softmax activation on the scores, and computes
-    the weighted sum of the value tensor based on the attention
-    scores.
-    """
-
-    return batch_and_sequence_chunked_attention(q, k, v, batch_chunks=chunks, inplace=inplace)
-
-
-def sequence_chunked_attention(
-    q: Tensor,  # (B, T, C)
-    k: Tensor,  # (B, T', C)
-    v: Tensor,  # (B, T', C')
-    chunks: int,
-    inplace: bool = False,
-) -> Tensor:  # (B, T, C')
-    """
-    The sequence_chunked function computes the attention mechanism
-    between query, key, and value tensors using the sequence-chunked
-    approach. It iterates over the sequence length in chunks and computes
-    the attention scores, applies softmax activation on the scores,
-    and computes the weighted sum of the value tensor based on the
-    attention scores.
-    """
-
-    return batch_and_sequence_chunked_attention(q, k, v, seq_chunks=chunks, inplace=inplace)

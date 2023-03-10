@@ -22,8 +22,10 @@ def available_memory(device: Optional[torch.device] = None) -> int:
 
     return free
 
+
 # TODO ADD
 # psutil.virtual_memory().available
+
 
 def allocated_memory(device: Optional[torch.device] = None) -> int:
     """

@@ -27,7 +27,7 @@ def memory_efficient_attention(
     the `key_chunk_size` and `query_chunk_size` parameters which should be
     adjusted to the best configuration for the specific use case.
     """
-    
+
     B, T, C = q.shape
     B, Tp, Cp = v.shape
 
@@ -82,3 +82,5 @@ def memory_efficient_attention(
         del unorm_attn_sums, all_values, all_unorm_attn_sums
 
     return out
+
+# TODO compute memory usage

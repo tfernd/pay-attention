@@ -12,11 +12,10 @@ def scaled(
     inplace: bool = False,
 ) -> Tensor:  # (..., C)
     """
-    The scaled function scales the input tensor by multiplying
-    it with the scaling factor. The scaling factor is calculated
-    based on the dimension of the tensor (C) using the formula
-    :math:`q / \\sqrt{C}`. The function returns
-    the input tensor scaled by the calculated factor.
+    Scales the input tensor by multiplying it with the scaling factor.
+    The scaling factor is calculated based on the dimension of the tensor (C)
+    using the formula q / sqrt(C). The function returns the input tensor
+    scaled by the calculated factor.
     """
 
     C = q.size(-1)
@@ -25,12 +24,16 @@ def scaled(
     return q * scale if not inplace else q.mul_(scale)
 
 
-# TODO code duplication
 def scaled_memory(
     shape: tuple[int, ...],
     dtype: torch.dtype,
     inplace: bool = False,
 ) -> int:
+    """
+    Computes the amount of memory (in bytes) required to store a tensor
+    with the specified shape and data type after applying the scaled function.
+    """
+
     if inplace:
         return 0
 
@@ -42,7 +45,7 @@ def scaled_memory(
 
     element_size = 4 if dtype == torch.float32 else 2
 
-    # magic number that takes into account non-power of 2 B's ans C's
-    MAGIC = 1.0035
+    # using a magic number that takes into account non-power of 2 B's and C's
+    MAGIC = 1.0028
 
     return math.ceil(element_size * B * C * MAGIC)

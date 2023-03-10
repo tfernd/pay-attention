@@ -25,26 +25,23 @@ def attention(
     k = k.contiguous()
     v = v.contiguous()
 
-    if XFORMERS:
+    if XFORMERS and C == Cp and C <= 128:
         return xformers_attention(q, k, v)
 
-    free_mem = available_memory()
+    free_mem = available_memory() # TODO M1 devices?
 
     # Try standard attention
-    standard = standard_attention_memory(q.shape, v.shape, q.dtype, inplace=False)
-    if standard < free_mem:
-        return standard_attention(q, k, v, inplace=False)
+    for inplace in [False, True]:
+        standard_mem = standard_attention_memory(q.shape, v.shape, q.dtype, inplace)
 
-    # Try standard attention with inplace operations
-    standard2 = standard_attention_memory(q.shape, v.shape, q.dtype, inplace=True)
-    if standard2 < free_mem:
-        return standard_attention(q, k, v, inplace=True)
+        if standard_mem < free_mem:
+            return standard_attention(q, k, v, inplace)
 
     # Try all possible batch and sequency combinations and get the one that uses the most RAM < free
-    out = []
+    out: list[tuple[int, int, bool, int]] = []
     for inplace in [False, True]:
         for batch_chunks in range(1, B + 1):
-            for i in range(1, 12):
+            for i in range(1, 16): # splits # TODO use multiples of 128?
                 seq_chunks = T // i
 
                 mem = batch_and_sequence_chunked_attention_memory(

@@ -52,6 +52,11 @@ def batch_and_sequence_chunked_attention_memory(
     dtype: torch.dtype,
     inplace: bool = False,
 ) -> int:
+    """
+    Computes the amount of memory (in bytes) required to perform
+    the batch-and-sequence chunked attention operation.
+    """
+
     assert dtype in (torch.float32, torch.half)
 
     B, T, C = q_shape
@@ -59,11 +64,11 @@ def batch_and_sequence_chunked_attention_memory(
 
     element_size = 4 if dtype == torch.float32 else 2
 
-    q_shape = (batch_chunks, seq_chunks, C)
-    v_shape = (batch_chunks, Tp, Cp)
+    q_chunk_shape = (batch_chunks, seq_chunks, C)
+    v_chunk_shape = (batch_chunks, Tp, Cp)
 
     size = (B * T * Cp) * element_size
-    size += standard_attention_memory(q_shape, v_shape, dtype, inplace)
+    size += standard_attention_memory(q_chunk_shape, v_chunk_shape, dtype, inplace)
 
     return size
 
@@ -84,11 +89,7 @@ def batch_chunked_attention(
     scores.
     """
 
-    assert chunks >= 1
-
-    return batch_and_sequence_chunked_attention(
-        q, k, v, batch_chunks=chunks, seq_chunks=None, inplace=inplace
-    )
+    return batch_and_sequence_chunked_attention(q, k, v, batch_chunks=chunks, inplace=inplace)
 
 
 def sequence_chunked_attention(
@@ -107,8 +108,4 @@ def sequence_chunked_attention(
     attention scores.
     """
 
-    assert chunks >= 1
-
-    return batch_and_sequence_chunked_attention(
-        q, k, v, batch_chunks=None, seq_chunks=chunks, inplace=inplace
-    )
+    return batch_and_sequence_chunked_attention(q, k, v, seq_chunks=chunks, inplace=inplace)

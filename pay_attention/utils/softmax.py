@@ -23,12 +23,16 @@ def softmax(
     return x
 
 
-# TODO code duplication
 def softmax_memory(
     shape: tuple[int, ...],
     dtype: torch.dtype,
     inplace: bool = False,
 ) -> int:
+    """
+    Computes the amount of memory (in bytes) required to store a tensor
+    with the specified shape and data type after applying the softmax function.
+    """
+
     assert dtype in (torch.float32, torch.half)
     assert len(shape) >= 2
 
@@ -38,13 +42,16 @@ def softmax_memory(
     element_size = 4 if dtype == torch.float32 else 2
 
     if inplace:
-        min_size = 128 if dtype == torch.float32 else 256  # cache size? warp-size?
+        # Compute the memory required to store the tensor in-place after applying the softmax function
+        # by rounding up to the nearest multiple of the minimum size required to avoid bank conflicts
+        # in shared memory
+        min_size = 128 if dtype == torch.float32 else 256
 
         B += min_size - B % min_size
 
         return element_size * B
 
-    # magic number that takes into account non-power of 2 B's ans C's
-    MAGIC = 1.011
+    # using a magic number that takes into account non-power of 2 B's and C's
+    MAGIC = 1.0017
 
     return math.ceil(element_size * B * C * MAGIC)

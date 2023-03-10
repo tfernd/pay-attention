@@ -24,7 +24,7 @@ def memory_used(
     allocated_list: list[int] = []
 
     def continous_pooling(exit_flag: threading.Event) -> None:
-        # Continuously measure the allocated memory while the exit flag is not set.
+        # Continuously measure the allocated memory while the exit flag is not set
         while not exit_flag.is_set():
             allocated_list.append(allocated_memory())
 
@@ -35,7 +35,7 @@ def memory_used(
 
     initial_allocated_memory = allocated_memory()
 
-    # Execute the provided function.
+    # Execute the provided function multiple times until allocated memory is measured
     for _ in range(repeats):
         function(*args, **kwargs)
 

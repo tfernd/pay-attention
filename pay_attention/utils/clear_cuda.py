@@ -6,7 +6,7 @@ import torch
 
 
 def clear_cuda(sync_device: Optional[torch.device] = None) -> None:
-    """Clear CUDA memory and garbage collection."""
+    """Clears CUDA memory and performs garbage collection."""
 
     gc.collect()
 

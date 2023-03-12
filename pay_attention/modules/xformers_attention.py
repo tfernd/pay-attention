@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import torch
 from torch import Tensor
 
 try:
@@ -10,6 +11,7 @@ except:
     XFORMERS = False
 
 
+# TODO possibility to chunk it to use even less memory?
 def xformers_attention(
     q: Tensor,  # (B, T, C)
     k: Tensor,  # (B, T', C)
@@ -26,10 +28,10 @@ def xformers_attention(
     assert XFORMERS
 
     dtype = q.dtype
-
-    q = q.half()
-    k = k.half()
-    v = v.half()
+    if dtype != torch.half:
+        q = q.half()
+        k = k.half()
+        v = v.half()
 
     op = xformers.ops.MemoryEfficientAttentionFlashAttentionOp
     out = xformers.ops.memory_efficient_attention(q, k, v, op=op)

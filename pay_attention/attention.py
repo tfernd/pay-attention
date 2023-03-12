@@ -41,6 +41,7 @@ def attention(
             return standard_attention(q, k, v, inplace)
 
     # Try all possible batch and sequency combinations and get the one that uses the most RAM < free
+    # TODO use less foor loops?
     out: list[tuple[int, int, bool, int]] = []
     for inplace in [False, True]:
         for batch_chunks in range(1, B + 1):

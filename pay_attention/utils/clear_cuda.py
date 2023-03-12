@@ -16,3 +16,6 @@ def clear_cuda(sync_device: Optional[torch.device] = None) -> None:
 
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
+    else:
+        # ? M1? CPU?
+        ...

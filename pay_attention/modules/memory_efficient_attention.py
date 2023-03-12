@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 from torch import Tensor
 
-from ..utils import scaled
+from ..ops import scaled
 
 # ! actually uses more memory...
 # TODO how to cut memory?
@@ -35,7 +35,7 @@ def memory_efficient_attention(
     for i in range(0, T, q_chunks):
         si = slice(i, min(i + q_chunks, T))
 
-        qc = scaled(q[:, si])  # (B, q_chunks, C)
+        qc = scaled(q[:, si])  # (B, q_chunks, C) # ?Move up?
 
         unorm_outs: list[Tensor] | Tensor = []
         unorm_attn_sums: list[Tensor] | Tensor = []
@@ -60,6 +60,7 @@ def memory_efficient_attention(
             unorm_outs.append(unorm_out)
             unorm_attn_sums.append(unorm_attn_sum)
             max_scores.append(max_score)
+        del qc
 
         # recombine chunks
         unorm_outs = torch.stack(unorm_outs, dim=1)  # (B, Tp//k_chunks, q_chunks, C')
@@ -82,5 +83,6 @@ def memory_efficient_attention(
         del unorm_attn_sums, all_values, all_unorm_attn_sums
 
     return out
+
 
 # TODO compute memory usage

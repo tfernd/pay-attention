@@ -11,6 +11,7 @@ def available_memory(device: Optional[torch.device] = None) -> int:
     """
 
     assert torch.cuda.is_available()
+    # TODO M1/CPU
 
     stats = torch.cuda.memory_stats(device)
 
@@ -35,6 +36,7 @@ def allocated_memory(device: Optional[torch.device] = None) -> int:
     allocation but not yet used.
     """
 
+    # TODO M1/CPU
     memory_stats = torch.cuda.memory_stats(device)
     allocated_memory = memory_stats["allocated_bytes.all.current"]
 

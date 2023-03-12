@@ -35,7 +35,7 @@ def memory_used(
 
     initial_allocated_memory = allocated_memory()
 
-    # Execute the provided function multiple times until allocated memory is measured
+    # Execute the provided function multiple times until memory is measured
     for _ in range(repeats):
         function(*args, **kwargs)
 

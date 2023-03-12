@@ -15,6 +15,14 @@ def xformers_attention(
     k: Tensor,  # (B, T', C)
     v: Tensor,  # (B, T', C')
 ) -> Tensor:  # (B, T, C')
+    """
+    Computes the attention mechanism between query, key, and value tensors
+    using the XFormers approach. The function converts the query, key,
+    and value tensors to half-precision floating-point format, applies the
+    XFormers memory-efficient attention operation, and returns the resulting
+    attention output in the original data type of the query tensor.
+    """
+
     assert XFORMERS
 
     dtype = q.dtype
@@ -33,6 +41,12 @@ def xformers_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C)
 ) -> int:
+    """
+    Computes the amount of memory (in bytes) required to store the tensors
+    used in the XFormers attention mechanism. The function returns the
+    estimated memory usage based on the input tensor shapes.
+    """
+
     B, T, C = q_shape
     B, Tp, C = v_shape
 

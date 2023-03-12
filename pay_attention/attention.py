@@ -17,14 +17,15 @@ def attention(
     B, Tp, Cp = k.shape
 
     assert q.ndim == k.ndim == v.ndim == 3
-    assert q.size(0) == k.size(0) == v.size(0)
-    assert q.size(2) == k.size(2)
-    assert k.size(1) == v.size(1)
+    assert q.size(0) == k.size(0) == v.size(0)  # B
+    assert q.size(2) == k.size(2)  # C
+    assert k.size(1) == v.size(1)  # T'
 
     q = q.contiguous()
     k = k.contiguous()
     v = v.contiguous()
 
+    # TODO check if is CUDA device
     if XFORMERS and C == Cp and C <= 128:
         return xformers_attention(q, k, v)
 
@@ -32,17 +33,17 @@ def attention(
 
     # Try standard attention
     for inplace in [False, True]:
-        standard_mem = standard_attention_memory(q.shape, v.shape, q.dtype, inplace)
+        mem = standard_attention_memory(q.shape, v.shape, q.dtype, inplace)
 
-        if standard_mem < free_mem:
+        if mem < free_mem:
             return standard_attention(q, k, v, inplace)
 
     # Try all possible batch and sequency combinations and get the one that uses the most RAM < free
     out: list[tuple[int, int, bool, int]] = []
     for inplace in [False, True]:
         for batch_chunks in range(1, B + 1):
-            for i in range(1, 16):  # splits # TODO use multiples of 128?
-                seq_chunks = T // i
+            for i in range(1, 16):  # splits
+                seq_chunks = T // i  # TODO use multiples of 128? 32?
 
                 mem = chunked_attention_memory(q.shape, v.shape, q.dtype, batch_chunks, seq_chunks, inplace)
                 if mem > free_mem:

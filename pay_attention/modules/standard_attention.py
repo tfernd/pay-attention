@@ -5,8 +5,8 @@ import math
 import torch
 from torch import Tensor
 
-from ..utils import scaled, softmax
-from ..utils import scaled_memory, softmax_memory
+from ..ops import scaled, softmax
+from ..ops import scaled_memory, softmax_memory
 
 
 def standard_attention(

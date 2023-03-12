@@ -31,8 +31,6 @@ def chunked_attention(
     assert B >= batch_chunks >= 1
     assert T >= seq_chunks >= 1
 
-    from tqdm.auto import trange as range
-
     out = torch.empty(B, T, Cp, dtype=q.dtype, device=q.device)  # (B, T, C')
     for i in range(0, B, batch_chunks):
         si = slice(i, min(i + batch_chunks, B))
@@ -69,7 +67,7 @@ def chunked_attention_memory(
 
     assert B >= batch_chunks >= 1
     assert T >= seq_chunks >= 1
-    
+
     element_size = 4 if dtype == torch.float32 else 2
 
     q_chunk_shape = (batch_chunks, seq_chunks, C)

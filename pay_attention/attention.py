@@ -28,6 +28,8 @@ def attention(
     # TODO check if is CUDA device
     if XFORMERS and C == Cp and C <= 128:
         return xformers_attention(q, k, v)
+    
+    # TODO add torch 2 attention
 
     free_mem = available_memory(device=q.device)  # TODO M1 devices?
 

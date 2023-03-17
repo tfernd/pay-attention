@@ -68,6 +68,7 @@ def xformers_attention(
 def xformers_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C)
+    dtype: torch.dtype,
     batch_chunks: Optional[int] = None,
     seq_chunks: Optional[int] = None,
 ) -> int:
@@ -83,12 +84,19 @@ def xformers_attention_memory(
     batch_chunks = batch_chunks or B
     seq_chunks = seq_chunks or T
 
-    return batch_chunks * C * (8 * seq_chunks + 4 * Tp)
+    size = batch_chunks * C * (8 * seq_chunks + 4 * Tp)
+
+    if batch_chunks != B or seq_chunks != T:
+        element_size = 4 if dtype == torch.float32 else 2
+        size += (B * T * C) * element_size  # cache size
+
+    return size
 
 
 def find_xformers_best_chunks(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C')
+    dtype: torch.dtype,
     device: torch.device,  # ! CUDA?
 ) -> tuple[int, int]:
     B, T, C = q_shape
@@ -101,7 +109,7 @@ def find_xformers_best_chunks(
         for i in range(1, 16):  # splits
             seq_chunks = T // i  # TODO use multiples of 128? 32?
 
-            mem = xformers_attention_memory(q_shape, v_shape, batch_chunks, seq_chunks)
+            mem = xformers_attention_memory(q_shape, v_shape, dtype, batch_chunks, seq_chunks)
             if mem > free_mem:
                 continue
 

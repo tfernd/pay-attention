@@ -22,7 +22,7 @@ def attention(
 
     # TODO check if is CUDA device?
     if XFORMERS and C == Cp and C <= 128:
-        batch_chunks, seq_chunks = find_xformers_best_chunks(q.shape, v.shape, q.device)
+        batch_chunks, seq_chunks = find_xformers_best_chunks(q.shape, v.shape, q.dtype, q.device)
 
         return xformers_attention(q, k, v, batch_chunks, seq_chunks)
 

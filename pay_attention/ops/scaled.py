@@ -8,7 +8,7 @@ from torch import Tensor
 
 
 def scaled(
-    q: Tensor,  # (..., C)
+    x: Tensor,  # (..., C)
     inplace: bool = False,
 ) -> Tensor:  # (..., C)
     """
@@ -18,10 +18,10 @@ def scaled(
     scaled by the calculated factor.
     """
 
-    C = q.size(-1)
+    C = x.size(-1)
     scale = math.pow(C, -1 / 4)
 
-    return q * scale if not inplace else q.mul_(scale)
+    return x * scale if not inplace else x.mul_(scale)
 
 
 def scaled_memory(

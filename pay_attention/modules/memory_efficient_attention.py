@@ -31,11 +31,12 @@ def memory_efficient_attention(
     B, T, C = q.shape
     B, Tp, Cp = v.shape
 
+    q = scaled(q)
+    k = scaled(k)
+
     out = torch.empty(B, T, Cp, device=q.device, dtype=q.dtype)  # (B, T, C')
     for i in range(0, T, q_chunks):
         si = slice(i, min(i + q_chunks, T))
-
-        qc = scaled(q[:, si])  # (B, q_chunks, C) # ?Move up?
 
         unorm_outs: list[Tensor] | Tensor = []
         unorm_attn_sums: list[Tensor] | Tensor = []
@@ -47,7 +48,7 @@ def memory_efficient_attention(
             vc = v[:, sj]  # (B, k_chunks, C')
 
             # unormalized attention computation
-            score = qc @ kc.transpose(-1, -2)  # (B, q_chunks, k_chunks)
+            score = q[:, si] @ kc.transpose(-1, -2)  # (B, q_chunks, k_chunks)
             del kc
             max_score = score.amax(dim=-1)  # (B, q_chunks)
             unorm_attn = torch.exp(score - max_score[..., None])  # (B, q_chunks, k_chunks)
@@ -60,7 +61,6 @@ def memory_efficient_attention(
             unorm_outs.append(unorm_out)
             unorm_attn_sums.append(unorm_attn_sum)
             max_scores.append(max_score)
-        del qc
 
         # recombine chunks
         unorm_outs = torch.stack(unorm_outs, dim=1)  # (B, Tp//k_chunks, q_chunks, C')

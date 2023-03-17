@@ -25,6 +25,7 @@ def standard_attention(
     """
 
     q = scaled(q, inplace)
+    k = scaled(k, inplace)
 
     # Calculate the attention scores between the query and key tensors
     score = q @ k.transpose(-1, -2)  # (B, T, T')
@@ -39,6 +40,7 @@ def standard_attention(
 
 def standard_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
+    k_shape: tuple[int, int, int],  # (B, T', C)
     v_shape: tuple[int, int, int],  # (B, T', C')
     dtype: torch.dtype,
     inplace: bool = False,
@@ -56,6 +58,7 @@ def standard_attention_memory(
     element_size = 4 if dtype == torch.float32 else 2
 
     size = scaled_memory(q_shape, dtype, inplace)
+    size = scaled_memory(k_shape, dtype, inplace)
     size += (B * T * Tp) * element_size  # TODO matmul_memory
     size += softmax_memory((B, T, Tp), dtype, inplace)
     size += (B * T * Cp) * element_size  # TODO matmul_memory
@@ -65,7 +68,7 @@ def standard_attention_memory(
     size -= (B * T * C) * element_size if not inplace else 0
     size -= (B * T * Tp) * element_size if not inplace else 0
 
-    # Apply a magic number to account for non-power-of-two tensor
+    # Apply a magic number to account for non-power-of-two tensor (Empiric)
     size *= 1.239 if not inplace else 1
 
     return math.ceil(size)

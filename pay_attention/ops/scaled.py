@@ -19,7 +19,7 @@ def scaled(
     """
 
     C = q.size(-1)
-    scale = math.pow(C, -1 / 2)
+    scale = math.pow(C, -1 / 4)
 
     return q * scale if not inplace else q.mul_(scale)
 

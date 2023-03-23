@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import cache
+
 import math
 
 import torch
@@ -38,6 +40,7 @@ def standard_attention(
     return attn @ v  # (B, T, C')
 
 
+@cache
 def standard_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     k_shape: tuple[int, int, int],  # (B, T', C)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Optional
 
+from functools import cache
+
 import math
 
 import torch
@@ -65,6 +67,7 @@ def xformers_attention(
     return out
 
 
+@cache
 def xformers_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C)
@@ -105,8 +108,8 @@ def find_xformers_best_chunks(
     free_mem = available_memory(device=device)
 
     out: list[tuple[int, int, int, int]] = []
-    for batch_chunks in range(1, B + 1):
-        for i in range(1, 16):  # splits
+    for batch_chunks in range(B, 0, -1):
+        for i in range(1, T):  # splits
             seq_chunks = T // i  # TODO use multiples of 128? 32?
 
             mem = xformers_attention_memory(q_shape, v_shape, dtype, batch_chunks, seq_chunks)
@@ -117,10 +120,11 @@ def find_xformers_best_chunks(
 
             out.append((batch_chunks, seq_chunks, mem, loops))
 
-    # TODO sort by least loops and least memory
+            # alread found the biggest that fit, no need to divide T any longer
+            break
 
     assert len(out) >= 1, "Potato PC went BOOM."
-    out = sorted(out, key=lambda x: (x[2], x[3]))  # ? 3, 2?
+    out = sorted(out, key=lambda x: (x[3], x[2]))
 
     batch_chunks, seq_chunks, mem, loops = out[0]
 

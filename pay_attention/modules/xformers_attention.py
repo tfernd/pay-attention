@@ -102,7 +102,7 @@ def find_xformers_best_chunks(
     B, T, C = q_shape
     B, Tp, Cp = v_shape
 
-    free_mem = available_memory(device=device)  # TODO M1 devices?
+    free_mem = available_memory(device=device)
 
     out: list[tuple[int, int, int, int]] = []
     for batch_chunks in range(1, B + 1):

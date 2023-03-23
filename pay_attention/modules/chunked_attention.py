@@ -101,7 +101,7 @@ def find_best_chunks(
     B, T, C = q_shape
     B, Tp, Cp = v_shape
 
-    free_mem = available_memory(device=device)  # TODO M1 devices?
+    free_mem = available_memory(device)
 
     out: list[tuple[int, int, bool, int, float]] = []
     for inplace in [False, True]:

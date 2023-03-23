@@ -116,15 +116,15 @@ def find_best_chunks(
                     continue
 
                 loops = math.ceil(B / batch_chunks) * math.ceil(T / seq_chunks)
+
                 if inplace:
+                    # inplace make things a bit slower at the cost of less memory
                     loops += 1 / 2
 
                 out.append((batch_chunks, seq_chunks, inplace, mem, loops))
 
-    # TODO sort by least loops and least memory
-
     assert len(out) >= 1, "Potato PC went BOOM."
-    out = sorted(out, key=lambda x: x[-1])  # least amount of loops
+    out = sorted(out, key=lambda x: (x[3], x[4]))  # ? 4, 3?
 
     batch_chunks, seq_chunks, inplace, mem, loops = out[0]
 

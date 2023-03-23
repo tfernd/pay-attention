@@ -120,7 +120,7 @@ def find_xformers_best_chunks(
     # TODO sort by least loops and least memory
 
     assert len(out) >= 1, "Potato PC went BOOM."
-    out = sorted(out, key=lambda x: x[-1])  # least amount of loops
+    out = sorted(out, key=lambda x: (x[2], x[3]))  # ? 3, 2?
 
     batch_chunks, seq_chunks, mem, loops = out[0]
 

@@ -4,11 +4,16 @@ from torch import Tensor
 
 from .modules import chunked_attention, find_best_chunks, find_xformers_best_chunks
 from .modules import xformers_attention, XFORMERS
-
+from .modules import memory_efficient_attention
 
 # TODO add torch 2 attention
+
+
 def attention(
-    q: Tensor, k: Tensor, v: Tensor, inplace: bool = False  # (B, T, C)  # (B, T', C)  # (B, T', C')
+    q: Tensor,  # (B, T, C)
+    k: Tensor,  # (B, T', C)
+    v: Tensor,  # (B, T', C')
+    inplace: bool = False,
 ) -> Tensor:  # (B, T, C')
     assert q.ndim == k.ndim == v.ndim == 3
     assert q.size(0) == k.size(0) == v.size(0)  # B
@@ -29,3 +34,5 @@ def attention(
     batch_chunks, seq_chunks = find_best_chunks(q.shape, k.shape, v.shape, q.dtype, q.device)
 
     return chunked_attention(q, k, v, batch_chunks, seq_chunks, inplace)
+
+    # memory_efficient_attention(q, k, v)

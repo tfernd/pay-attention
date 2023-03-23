@@ -36,26 +36,28 @@ def memory_efficient_attention(
 
     out = torch.empty(B, T, Cp, device=q.device, dtype=q.dtype)  # (B, T, C')
     for i in range(0, T, q_chunks):
-        si = slice(i, min(i + q_chunks, T))
+        q_slice = slice(i, min(i + q_chunks, T))
 
         unorm_outs: list[Tensor] | Tensor = []
         unorm_attn_sums: list[Tensor] | Tensor = []
         max_scores: list[Tensor] | Tensor = []
         for j in range(0, Tp, k_chunks):
-            sj = slice(j, min(j + k_chunks, Tp))
+            k_slice = slice(j, min(j + k_chunks, Tp))
 
-            kc = k[:, sj]  # (B, k_chunks, C)
-            vc = v[:, sj]  # (B, k_chunks, C')
+            k_chunk = k[:, k_slice]  # (B, k_chunks, C)
+            v_chunk = v[:, k_slice]  # (B, k_chunks, C')
 
             # unormalized attention computation
-            score = q[:, si] @ kc.transpose(-1, -2)  # (B, q_chunks, k_chunks)
-            del kc
+            score = q[:, q_slice] @ k_chunk.transpose(-1, -2)  # (B, q_chunks, k_chunks)
+            del k_chunk
+
             max_score = score.amax(dim=-1)  # (B, q_chunks)
             unorm_attn = torch.exp(score - max_score[..., None])  # (B, q_chunks, k_chunks)
             del score
+
             unorm_attn_sum = unorm_attn.sum(dim=-1)  # (B, q_chunks)
-            unorm_out = unorm_attn @ vc  # (B, q_chunks, C')
-            del unorm_attn, vc
+            unorm_out = unorm_attn @ v_chunk  # (B, q_chunks, C')
+            del unorm_attn, v_chunk
 
             # save chunked results
             unorm_outs.append(unorm_out)
@@ -77,9 +79,10 @@ def memory_efficient_attention(
 
         all_values = unorm_outs.sum(dim=1)  # (B, q_chunks, C')
         del unorm_outs
+
         all_unorm_attn_sums = unorm_attn_sums.sum(dim=1)  # (B, q_chunks)
 
-        out[:, si] = all_values / all_unorm_attn_sums[..., None]  # (B, q_chunks, C')
+        out[:, q_slice] = all_values / all_unorm_attn_sums[..., None]  # (B, q_chunks, C')
         del unorm_attn_sums, all_values, all_unorm_attn_sums
 
     return out

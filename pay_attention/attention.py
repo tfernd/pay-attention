@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+import torch.nn.functional as F
 from torch import Tensor
 
 from .modules import chunked_attention, find_best_chunks, find_xformers_best_chunks
 from .modules import xformers_attention, XFORMERS
 from .modules import memory_efficient_attention
-
-# TODO add torch 2 attention
 
 
 def attention(
@@ -20,13 +19,16 @@ def attention(
     assert q.size(2) == k.size(2)  # C
     assert k.size(1) == v.size(1)  # T'
 
+    device = q.device
     B, T, C = q.shape
     B, Tp, Cp = k.shape
 
     q, k, v = map(lambda x: x.contiguous(), (q, k, v))  # ? needed?
 
-    # TODO check if is CUDA device?
-    if XFORMERS and C == Cp and C <= 128:
+    # TODO add torch 2 attention
+    # return F.scaled_dot_product_attention(q, k, v)
+
+    if XFORMERS and C == Cp and C <= 128 and device.type == 'cuda':
         batch_chunks, seq_chunks = find_xformers_best_chunks(q.shape, v.shape, q.dtype, q.device)
 
         return xformers_attention(q, k, v, batch_chunks, seq_chunks)

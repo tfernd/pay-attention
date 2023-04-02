@@ -28,7 +28,7 @@ The implementation has been tested with Python 3.9, and PyTorch 1.13.0.
 To install Pay Attention, simply clone this repository to your local machine:
 
 ```bash
-pip install git+https://github.com/tfernd/pay-attention.git
+pip install -U git+https://github.com/tfernd/pay-attention.git
 ```
 
 # Usage Examples

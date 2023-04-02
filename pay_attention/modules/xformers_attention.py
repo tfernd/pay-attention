@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 
 try:
-    import xformers.ops
+    import xformers.ops # type: ignore
 
     XFORMERS = True
 except:

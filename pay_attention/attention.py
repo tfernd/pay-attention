@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import torch.nn.functional as F
 from torch import Tensor
 
 from .modules import chunked_attention, find_best_chunks, find_xformers_best_chunks
@@ -12,7 +11,6 @@ def attention(
     q: Tensor,  # (B, T, C)
     k: Tensor,  # (B, T', C)
     v: Tensor,  # (B, T', C')
-    inplace: bool = False,
 ) -> Tensor:  # (B, T, C')
     assert q.ndim == k.ndim == v.ndim == 3
     assert q.size(0) == k.size(0) == v.size(0)  # B
@@ -33,8 +31,8 @@ def attention(
 
         return xformers_attention(q, k, v, batch_chunks, seq_chunks)
 
-    batch_chunks, seq_chunks = find_best_chunks(q.shape, k.shape, v.shape, q.dtype, q.device)
+    batch_chunks, seq_chunks, inplace = find_best_chunks(q.shape, k.shape, v.shape, q.dtype, q.device)
 
     return chunked_attention(q, k, v, batch_chunks, seq_chunks, inplace)
 
-    # memory_efficient_attention(q, k, v)
+    # ! memory_efficient_attention(q, k, v)

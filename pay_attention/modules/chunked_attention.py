@@ -100,7 +100,7 @@ def find_best_chunks(
     v_shape: tuple[int, int, int],  # (B, T', C')
     dtype: torch.dtype,
     device: torch.device,
-) -> tuple[int, int]:
+) -> tuple[int, int, bool]:
     B, T, C = q_shape
     B, Tp, Cp = v_shape
 
@@ -135,4 +135,4 @@ def find_best_chunks(
 
     batch_chunks, seq_chunks, inplace, mem, loops = out[0]
 
-    return batch_chunks, seq_chunks
+    return batch_chunks, seq_chunks, inplace

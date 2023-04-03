@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional
 
-from functools import cache
+from functools import lru_cache
 
 import math
 
@@ -53,7 +53,7 @@ def chunked_attention(
     return out
 
 
-@cache
+@lru_cache(None)
 def chunked_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     k_shape: tuple[int, int, int],  # (B, T', C)

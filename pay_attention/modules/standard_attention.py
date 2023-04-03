@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import cache
+from functools import lru_cache
 
 import math
 
@@ -40,7 +40,7 @@ def standard_attention(
     return attn @ v  # (B, T, C')
 
 
-@cache
+@lru_cache(None)
 def standard_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     k_shape: tuple[int, int, int],  # (B, T', C)

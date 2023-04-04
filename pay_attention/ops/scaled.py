@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import numpy as np
 
 import torch
 from torch import Tensor
@@ -25,8 +24,7 @@ def scaled(
 
 
 def scaled_memory(
-    shape: tuple[int, ...],
-    dtype: torch.dtype,
+    x: Tensor,  # (..., C)
     inplace: bool = False,
 ) -> int:
     """
@@ -37,15 +35,11 @@ def scaled_memory(
     if inplace:
         return 0
 
-    assert dtype in (torch.float32, torch.half)
-    assert len(shape) >= 2
+    N = x.numel()
 
-    *pre_shape, C = shape
-    B = np.prod(pre_shape).item()
+    element_size = 4 if x.dtype == torch.float32 else 2
+    mult = 128 if x.dtype == torch.float32 else 256
 
-    element_size = 4 if dtype == torch.float32 else 2
+    N = math.ceil(N / mult) * mult
 
-    # using a magic number that takes into account non-power of 2 B's and C's
-    MAGIC = 1.0028
-
-    return math.ceil(element_size * B * C * MAGIC)
+    return element_size * N

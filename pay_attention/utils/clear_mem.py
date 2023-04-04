@@ -6,6 +6,8 @@ import torch
 
 
 def clear_cuda_mem(device: torch.device) -> None:
+    """Clears the memory of the specified CUDA device."""
+
     torch.cuda.synchronize(device)
 
     torch.cuda.empty_cache()

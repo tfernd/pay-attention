@@ -51,7 +51,7 @@ def standard_attention_memory(
     mask_shape: Optional[tuple[int, int, int]],  # (B, T, T')
     inplace: bool,
     dtype: torch.dtype,
-    mask_dtype: torch.dtype,
+    mask_dtype: Optional[torch.dtype],
 ) -> int:
     """
     Computes the amount of memory (in bytes) required to store the tensors

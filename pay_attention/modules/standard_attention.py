@@ -67,11 +67,13 @@ def standard_attention_memory(
 
     mem = scaled_memory(q_shape, inplace, dtype)
     mem += scaled_memory(k_shape, inplace, dtype)
+
     # matrix multiplication q @ k.T # TODO make a function for this!
     mem += element_size * 2 * math.ceil(B * T * Tp / mult) * mult
 
     mem += mask_score_memory(score_shape, mask_shape, inplace, dtype, mask_dtype)
     mem += softmax_memory(score_shape, inplace, dtype)
+
     # matrix multiplication attn @ v # TODO make a function for this!
     mem += element_size * 2 * math.ceil(B * T * Cp / mult) * mult
 

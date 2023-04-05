@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import math
+import numpy as np
 
 import torch
 from torch import Tensor
 
 
 def softmax(
-    x: Tensor,  # (..., C)
-    inplace: bool = False,
-) -> Tensor:  # (..., C)
+    x: Tensor,  # (...B, C)
+    inplace: bool,
+) -> Tensor:  # (...B, C)
     """Applies the softmax function to the input tensor `x` along the last dimension."""
 
     if not inplace:
@@ -22,22 +23,22 @@ def softmax(
     return x
 
 
-# TODO computation does not work well for CPU and might be different for other GPUs
 def softmax_memory(
-    x: Tensor,  # (..., C)
-    inplace: bool = False,
+    shape: tuple[int, ...],  # (...B, C)
+    inplace: bool,
+    dtype: torch.dtype,
 ) -> int:
     """
     Computes the amount of memory (in bytes) required to store a tensor
     with the specified shape and data type after applying the softmax function.
     """
 
-    N = x.numel()
-    C = x.size(-1)
+    N = np.prod(shape)
+    C = shape[-1]
     B = N // C
 
-    element_size = 4 if x.dtype == torch.float32 else 2
-    mult = 128 if x.dtype == torch.float32 else 256
+    element_size = 4 if dtype == torch.float32 else 2
+    mult = 128 if dtype == torch.float32 else 256
 
     if inplace:
         B = math.ceil(B / mult + 1) * mult

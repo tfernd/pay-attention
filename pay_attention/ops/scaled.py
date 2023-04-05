@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import math
+import numpy as np
 
 import torch
 from torch import Tensor
 
 
 def scaled(
-    x: Tensor,  # (..., C)
-    inplace: bool = False,
-) -> Tensor:  # (..., C)
+    x: Tensor,  # (...B, C)
+    inplace: bool,
+) -> Tensor:  # (...B, C)
     """
     Scales the input tensor by multiplying it with the scaling factor.
     The scaling factor is calculated based on the dimension of the tensor (C)
@@ -24,8 +25,9 @@ def scaled(
 
 
 def scaled_memory(
-    x: Tensor,  # (..., C)
-    inplace: bool = False,
+    shape: tuple[int, ...],  # (...B, C)
+    inplace: bool,
+    dtype: torch.dtype,
 ) -> int:
     """
     Computes the amount of memory (in bytes) required to store a tensor
@@ -35,10 +37,10 @@ def scaled_memory(
     if inplace:
         return 0
 
-    N = x.numel()
+    N = np.prod(shape)
 
-    element_size = 4 if x.dtype == torch.float32 else 2
-    mult = 128 if x.dtype == torch.float32 else 256
+    element_size = 4 if dtype == torch.float32 else 2
+    mult = 128 if dtype == torch.float32 else 256
 
     N = math.ceil(N / mult) * mult
 

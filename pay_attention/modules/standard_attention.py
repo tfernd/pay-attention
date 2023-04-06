@@ -15,7 +15,7 @@ def standard_attention(
     q: Tensor,  # (B, T, C)
     k: Tensor,  # (B, T', C)
     v: Tensor,  # (B, T', C')
-    mask: Optional[Tensor],  # (B, T, T')
+    mask: Optional[Tensor],  # (B?, T, T')
     inplace: bool,
 ) -> Tensor:  # (B, T, C')
     """
@@ -48,7 +48,7 @@ def standard_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     k_shape: tuple[int, int, int],  # (B, T', C)
     v_shape: tuple[int, int, int],  # (B, T', C')
-    mask_shape: Optional[tuple[int, int, int]],  # (B, T, T')
+    mask_shape: Optional[tuple[int, int] | tuple[int, int, int]],  # (B?, T, T')
     inplace: bool,
     dtype: torch.dtype,
     mask_dtype: Optional[torch.dtype],

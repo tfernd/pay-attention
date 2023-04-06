@@ -1,15 +1,17 @@
 from __future__ import annotations
-
 from typing import Optional
-import numpy as np
+
+import math
 
 import torch
 from torch import Tensor
 
+from ..utils import multiple
+
 
 def mask_score(
-    score: Tensor,  # (B...)
-    mask: Optional[Tensor],  # (B...)
+    score: Tensor,  # (B, ...C)
+    mask: Optional[Tensor],  # (B?, ...C)
     inplace: bool,
 ) -> Tensor:  # (B...)
     if mask is None:
@@ -18,7 +20,7 @@ def mask_score(
     if mask.dtype == torch.bool:
         mask = score.new_zeros(*mask.shape).masked_fill_(mask, float("-inf"))
 
-    return score - mask if not inplace else score.sub_(mask)
+    return score + mask if not inplace else score.add_(mask)
 
 
 def mask_score_memory(
@@ -28,16 +30,15 @@ def mask_score_memory(
     score_dtype: torch.dtype,
     mask_dtype: Optional[torch.dtype],
 ) -> int:
-    assert (mask_shape is None) == (mask_dtype is None)
-
     if mask_shape is None:
         return 0
 
-    N = np.prod(score_shape).item()
+    Ns = math.prod(score_shape)
+    Nm = math.prod(mask_shape) if mask_shape and mask_dtype == torch.bool is not None else 0
     element_size = 4 if score_dtype == torch.float32 else 2
 
-    mem = element_size * N if not inplace else 0
+    mem = element_size * Ns if not inplace else 0
     if mask_dtype == torch.bool:
-        mem += 3 * element_size * N
+        mem += 3 * element_size * Ns
 
     return mem

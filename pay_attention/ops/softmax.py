@@ -47,4 +47,4 @@ def softmax_memory(
     if inplace:
         return element_size * 2 * multiple(B, mult)  # xmax and xsum
 
-    return element_size * 2 * multiple(N, mult)
+    return element_size * 2 * multiple(N, mult)  # F.softmax

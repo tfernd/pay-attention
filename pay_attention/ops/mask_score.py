@@ -35,10 +35,11 @@ def mask_score_memory(
 
     Ns = math.prod(score_shape)
     Nm = math.prod(mask_shape) if mask_shape and mask_dtype == torch.bool is not None else 0
-    element_size = 4 if score_dtype == torch.float32 else 2
 
-    mem = element_size * Ns if not inplace else 0
-    if mask_dtype == torch.bool:
-        mem += 3 * element_size * Ns
+    element_size = 4 if score_dtype == torch.float32 else 2
+    mult = 128 if score_dtype == torch.float32 else 256
+
+    mem = element_size * 3 * multiple(Nm, mult)  # change mask if bool
+    mem += element_size * multiple(Ns, mult) if not inplace else 0  # score + mask
 
     return mem

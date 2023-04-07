@@ -16,6 +16,7 @@ The goal of this library is to provide a user-friendly and efficient implementat
 Pay Attention currently implements the following attention mechanisms:
 
 - [x] Standard attention (`standard`)
+- [x] pytorch 2.x efficient-attention () <!-- TODO add name -->
 - [x] xformers (`xformers`)
 - [x] Batch/sequence chunked attention (`batch_chunked`, `sequence_chunked`, `batch_and_sequence_chunked`)
 - [x] Memory-efficient attention (`memory_efficient`) [a.k.a sub-quadratic attention] (WIP)

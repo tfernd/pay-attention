@@ -21,8 +21,9 @@ def attention(
     assert q.size(2) == k.size(2)  # C
     assert k.size(1) == v.size(1)  # T'
 
+
     if mask is not None:
-        assert mask.ndim == (2, 3)
+        assert mask.ndim in (2, 3)
         assert mask.size(-2) == q.size(1)  # T
         assert mask.size(-1) == k.size(1)  # T'
 

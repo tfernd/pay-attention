@@ -18,13 +18,13 @@ def mask_score(
 ) -> Tensor:  # (B...)
     if mask is None:
         return score
-
+    
     if mask.dtype == torch.bool:
         if inplace:
-            return score.masked_fill_(mask, MIN)
+            return score.masked_fill_(~mask, MIN)
 
         # TODO optimize this? needed?
-        return score.masked_fill(mask, MIN)
+        return score.masked_fill(~mask, MIN)
 
     return score + mask if not inplace else score.add_(mask)
 

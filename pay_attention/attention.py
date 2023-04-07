@@ -34,7 +34,7 @@ def attention(
 
     q, k, v = map(lambda x: x.contiguous(), (q, k, v))  # ? needed?
 
-    # add batch and sequence chunks
+    # TODO add batch and sequence chunks
     if hasattr(F, "scaled_dot_product_attention"):
         return F.scaled_dot_product_attention(q, k, v, mask)
 

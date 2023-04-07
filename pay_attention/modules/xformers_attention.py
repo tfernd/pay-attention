@@ -1,8 +1,6 @@
 from __future__ import annotations
 from typing import Optional
 
-from functools import lru_cache
-
 import math
 
 import torch
@@ -23,9 +21,9 @@ def xformers_attention(
     q: Tensor,  # (B, T, C)
     k: Tensor,  # (B, T', C)
     v: Tensor,  # (B, T', C')
-    mask: Optional[Tensor] = None,  # (B?, T, T')
-    batch_chunks: Optional[int] = None,
-    seq_chunks: Optional[int] = None,
+    mask: Optional[Tensor],  # (B?, T, T')
+    batch_chunks: Optional[int],
+    seq_chunks: Optional[int],
 ) -> Tensor:  # (B, T, C')
     """
     Computes the attention mechanism between query, key, and value tensors
@@ -34,8 +32,6 @@ def xformers_attention(
     XFormers memory-efficient attention operation, and returns the resulting
     attention output in the original data type of the query tensor.
     """
-
-    assert mask is None, ValueError("Not implemented yet, sorry!")
 
     assert XFORMERS
     op = xformers.ops.MemoryEfficientAttentionFlashAttentionOp
@@ -54,7 +50,11 @@ def xformers_attention(
 
     # do not chunk it for nothing
     if batch_chunks == B and seq_chunks == T:
-        out = xformers.ops.memory_efficient_attention(q, k, v, op=op)
+        if mask is not None:
+            # TODO convert to non-bool mask
+            assert mask.dtype != torch.bool
+
+        out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=mask, op=op)
 
         return out.to(dtype)
 
@@ -71,7 +71,6 @@ def xformers_attention(
     return out
 
 
-@lru_cache(None)
 def xformers_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C)

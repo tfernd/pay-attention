@@ -46,8 +46,10 @@ def chunked_attention(
         for j in range(0, T, seq_chunks):
             sj = slice(j, min(j + seq_chunks, T))
 
-            # (batch-chunks, seq_chunks, T')
-            mask_chunk = mask[si, sj] if mask is not None else None
+            # (batch-chunks?, seq_chunks, T')
+            mask_chunk = None
+            if mask is not None:
+                mask_chunk = mask[sj] if mask.ndim == 2 else mask[si, sj]
 
             # (batch-chunks, seq_chunks, C')
             out[si, sj] = standard_attention(q[si, sj], k[si], v[si], mask_chunk, inplace)
@@ -92,12 +94,12 @@ def chunked_attention_memory(
 
     element_size = 4 if dtype == torch.float32 else 2
 
-    size = (B * T * Cp) * element_size  # cache size
-    size += standard_attention_memory(
+    mem = element_size * (B * T * Cp)  # cache size
+    mem += standard_attention_memory(
         q_chunk_shape, k_chunk_shape, v_chunk_shape, mask_chunk_shape, inplace, dtype, mask_dtype
     )
 
-    return size
+    return mem
 
 
 def find_best_chunks(
@@ -105,7 +107,6 @@ def find_best_chunks(
     k_shape: tuple[int, int, int],  # (B, T', C)
     v_shape: tuple[int, int, int],  # (B, T', C')
     mask_shape: Optional[tuple[int, int, int]],  # (B, T, T')
-    inplace: bool,
     dtype: torch.dtype,
     mask_dtype: Optional[torch.dtype],
     device: torch.device,
@@ -154,6 +155,5 @@ def find_best_chunks(
     out = sorted(out, key=lambda x: (x[0], x[1]))
 
     loops, mem, batch_chunks, seq_chunks, inplace = out[0]
-    print(mem / 1024**2)
 
     return batch_chunks, seq_chunks, inplace, loops

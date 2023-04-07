@@ -8,6 +8,8 @@ from torch import Tensor
 
 from ..utils import multiple
 
+MIN = float("-inf")
+
 
 def mask_score(
     score: Tensor,  # (B, ...C)
@@ -18,7 +20,11 @@ def mask_score(
         return score
 
     if mask.dtype == torch.bool:
-        mask = score.new_zeros(*mask.shape).masked_fill_(mask, float("-inf"))
+        if inplace:
+            return score.masked_fill_(mask, MIN)
+
+        # TODO optimize this? needed?
+        return score.masked_fill(mask, MIN)
 
     return score + mask if not inplace else score.add_(mask)
 
@@ -30,16 +36,19 @@ def mask_score_memory(
     score_dtype: torch.dtype,
     mask_dtype: Optional[torch.dtype],
 ) -> int:
-    if mask_shape is None:
+    if inplace or mask_shape is None:
         return 0
 
     Ns = math.prod(score_shape)
-    Nm = math.prod(mask_shape) if mask_shape and mask_dtype == torch.bool is not None else 0
 
     element_size = 4 if score_dtype == torch.float32 else 2
     mult = 128 if score_dtype == torch.float32 else 256
 
-    mem = element_size * 3 * multiple(Nm, mult)  # change mask if bool
-    mem += element_size * multiple(Ns, mult) if not inplace else 0  # score + mask
+    if mask_dtype is not None and mask_dtype == torch.bool:
+        Nm = math.prod(mask_shape)
 
-    return mem
+        # ? why 4? really 4? check!
+        # There are some useles clone, empty-like, etc due to masked_fill
+        return element_size * 4 * multiple(Nm, mult)
+
+    return element_size * multiple(Ns, mult)

@@ -5,7 +5,7 @@ import math
 import torch
 from torch import Tensor
 
-from ..utils import multiple
+from ..utils import multiple, element_size, warp_memory_size
 
 
 def softmax(
@@ -40,11 +40,9 @@ def softmax_memory(
     C = shape[-1]
     B = N // C
 
-    # TODO create a function for this to avoid duplication
-    element_size = 4 if dtype == torch.float32 else 2
-    mult = 128 if dtype == torch.float32 else 256
+    warp_size = warp_memory_size(dtype)
 
     if inplace:
-        return element_size * 2 * multiple(B, mult)  # xmax and xsum
+        return element_size(dtype) * 2 * multiple(B, warp_size)  # xmax and xsum
 
-    return element_size * 2 * multiple(N, mult)  # F.softmax
+    return element_size(dtype) * 2 * multiple(N, warp_size)  # F.softmax

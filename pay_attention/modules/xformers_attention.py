@@ -13,10 +13,9 @@ try:
 except:
     XFORMERS = False
 
-from ..utils import available_memory
+from ..utils import available_memory, element_size
 
 
-# TODO add mask!
 def xformers_attention(
     q: Tensor,  # (B, T, C)
     k: Tensor,  # (B, T', C)
@@ -50,10 +49,7 @@ def xformers_attention(
 
     # do not chunk it for nothing
     if batch_chunks == B and seq_chunks == T:
-        if mask is not None:
-            # TODO convert to non-bool mask
-            assert mask.dtype != torch.bool
-
+        # TODO can mask be binary or float/half?
         out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=mask, op=op)
 
         return out.to(dtype)
@@ -65,8 +61,15 @@ def xformers_attention(
         for j in range(0, T, seq_chunks):
             sj = slice(j, min(j + seq_chunks, T))
 
+            # (batch-chunks?, seq_chunks, T')
+            mask_chunk = None
+            if mask is not None:
+                mask_chunk = mask[sj] if mask.ndim == 2 else mask[si, sj]
+
             # (batch-chunks, seq_chunks, C')
-            out[si, sj] = xformers.ops.memory_efficient_attention(q[si, sj], k[si], v[si], op=op).to(dtype)
+            out[si, sj] = xformers.ops.memory_efficient_attention(
+                q[si, sj], k[si], v[si], attn_bias=mask_chunk, op=op
+            ).to(dtype)
 
     return out
 
@@ -74,6 +77,8 @@ def xformers_attention(
 def xformers_attention_memory(
     q_shape: tuple[int, int, int],  # (B, T, C)
     v_shape: tuple[int, int, int],  # (B, T', C)
+    # TODO mask not considered!
+    # mask_shape: Optional[tuple[int,int] | tuple[int,int,int]],  # (B?, T, T')
     dtype: torch.dtype,
     batch_chunks: Optional[int] = None,
     seq_chunks: Optional[int] = None,
@@ -93,8 +98,7 @@ def xformers_attention_memory(
     size = batch_chunks * C * (8 * seq_chunks + 4 * Tp)
 
     if batch_chunks != B or seq_chunks != T:
-        element_size = 4 if dtype == torch.float32 else 2
-        size += (B * T * C) * element_size  # cache size
+        size += (B * T * C) * element_size(dtype)  # cache size
 
     return size
 

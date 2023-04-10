@@ -4,6 +4,7 @@ from typing import Optional
 import torch.nn.functional as F
 from torch import Tensor
 
+from .modules import TORCH2, chunked_scaled_dot_product_attention
 from .modules import XFORMERS, xformers_attention, find_xformers_best_chunks
 from .modules import chunked_attention, find_best_chunks
 
@@ -15,6 +16,7 @@ def attention(
     k: Tensor,  # (B, T', C)
     v: Tensor,  # (B, T', C')
     mask: Optional[Tensor] = None,  # (B?, T, T')
+    # TODO add switch for xformers, torch, sub-quadratic or auto-select
 ) -> Tensor:  # (B, T, C')
     assert q.ndim == k.ndim == v.ndim == 3
     assert q.size(0) == k.size(0) == v.size(0)  # B
@@ -34,9 +36,9 @@ def attention(
 
     q, k, v = map(lambda x: x.contiguous(), (q, k, v))  # ? needed?
 
-    # TODO add batch and sequence chunks
-    if hasattr(F, "scaled_dot_product_attention"):
-        return F.scaled_dot_product_attention(q, k, v, mask)
+    # TODO needs mem calculation
+    # if TORCH2:
+    # return chunked_scaled_dot_product_attention(q, k, v, mask)
 
     if XFORMERS and C == Cp and C <= 128 and device.type == "cuda" and mask is None:  # TODO use mask
         batch_chunks, seq_chunks = find_xformers_best_chunks(q.shape, v.shape, q.dtype, q.device)

@@ -9,6 +9,8 @@ from torch.profiler import profile, record_function
 # One trick Im doing to fix this is to run the function a few times and get the lowers mem usage... But it fell bad to do this..
 # Is there a way to FIX this?!!? I have to manual re-run things to check... So lame... Better profiling?
 class MemoryProfiler:
+    """A context manager for profiling memory usage of CPU and CUDA activities."""
+
     cuda_mem: int
     cpu_mem: int
 

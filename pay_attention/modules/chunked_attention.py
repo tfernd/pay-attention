@@ -6,7 +6,7 @@ import math
 import torch
 from torch import Tensor
 
-from ..utils import available_memory
+from ..utils import available_memory, element_size
 from .standard_attention import standard_attention, standard_attention_memory
 
 
@@ -92,9 +92,7 @@ def chunked_attention_memory(
     v_chunk_shape = (batch_chunks, Tp, Cp)
     mask_chunk_shape = (batch_chunks, seq_chunks, C)
 
-    element_size = 4 if dtype == torch.float32 else 2
-
-    mem = element_size * (B * T * Cp)  # cache size
+    mem = element_size(dtype) * (B * T * Cp)  # cache size
     mem += standard_attention_memory(
         q_chunk_shape, k_chunk_shape, v_chunk_shape, mask_chunk_shape, inplace, dtype, mask_dtype
     )

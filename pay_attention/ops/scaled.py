@@ -5,7 +5,7 @@ import math
 import torch
 from torch import Tensor
 
-from ..utils import multiple
+from ..utils import multiple, element_size, warp_memory_size
 
 
 def scaled(
@@ -39,8 +39,6 @@ def scaled_memory(
         return 0
 
     N = math.prod(shape)
+    warp_size = warp_memory_size(dtype)
 
-    element_size = 4 if dtype == torch.float32 else 2
-    mult = 128 if dtype == torch.float32 else 256
-
-    return element_size * multiple(N, mult)
+    return element_size(dtype) * multiple(N, warp_size)

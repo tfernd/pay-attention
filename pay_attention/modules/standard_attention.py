@@ -1,11 +1,10 @@
 from __future__ import annotations
 from typing import Optional
 
-import math
-
 import torch
 from torch import Tensor
 
+from ..utils import element_size, warp_memory_size, multiple
 from ..ops import scaled, softmax
 from ..ops import scaled_memory, softmax_memory
 from ..ops import mask_score, mask_score_memory
@@ -62,19 +61,18 @@ def standard_attention_memory(
     B, Tp, Cp = v_shape
     score_shape = (B, T, Tp)
 
-    element_size = 4 if dtype == torch.float32 else 2
-    mult = 128 if dtype == torch.float32 else 256
+    warp_size = warp_memory_size(dtype)
 
     mem = scaled_memory(q_shape, inplace, dtype)
     mem += scaled_memory(k_shape, inplace, dtype)
 
     # matrix multiplication q @ k.T # TODO make a function for this!
-    mem += element_size * 2 * math.ceil(B * T * Tp / mult) * mult
+    mem += element_size(dtype) * 2 * multiple(B * T * Tp, warp_size)
 
     mem += mask_score_memory(score_shape, mask_shape, inplace, dtype, mask_dtype)
     mem += softmax_memory(score_shape, inplace, dtype)
 
     # matrix multiplication attn @ v # TODO make a function for this!
-    mem += element_size * 2 * math.ceil(B * T * Cp / mult) * mult
+    mem += element_size(dtype) * 2 * multiple(B * T * Cp, warp_size)
 
     return mem

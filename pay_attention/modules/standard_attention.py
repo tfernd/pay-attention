@@ -8,48 +8,39 @@ from torch import Tensor
 
 
 def standard_attention(
-    query: Tensor,  # (B, T, C)
-    key: Tensor,  # (B, T', C)
-    value: Tensor,  # (B, T', C')
-    mask: Optional[Tensor] = None,  # (B?, T, T')
+    query: Tensor,  # shape(B, T, C)
+    key: Tensor,  # shape(B, T', C)
+    value: Tensor,  # shape(B, T', C')
+    mask: Optional[Tensor] = None,  # shape(B,? T, T')
     /,
     *,
-    batch_chunks: Optional[int] = None,
-    seq_chunks: Optional[int] = None,
-) -> Tensor:  # (B, T, C')
+    num_batch_chunks: int = 1,
+    num_seq_chunks: int = 1,
+) -> Tensor:  # shape(B, T, C')
     B, T, C = query.shape
     B, Tp, Cp = value.shape
-
-    # default
-    batch_chunks = batch_chunks or B
-    seq_chunks = seq_chunks or T
-
-    is_chunked = batch_chunks != B or seq_chunks != T
-
-    assert 1 <= batch_chunks <= B
-    assert 1 <= seq_chunks <= T
 
     # scale query and key
     scale = math.pow(C, -1 / 4)
     query = query * scale
     key = key * scale
 
-    # temporary array in case of chunked computation
-    # (B, T, C')
-    out = query.new_empty(B, T, Cp) if is_chunked else None
+    batch_chunk_size = math.ceil(B / num_batch_chunks)
+    seq_chunk_size = math.ceil(T / num_seq_chunks)
 
-    for i in range(0, B, batch_chunks):
-        batch_slice = slice(i, min(i + batch_chunks, B))
+    out = query.new_empty(B, T, Cp)  # (B, T, C')
+    for batch_idx in range(0, B, batch_chunk_size):
+        batch_slice = slice(batch_idx, min(batch_idx + batch_chunk_size, B))
 
-        for j in range(0, T, seq_chunks):
-            seq_slice = slice(j, min(j + seq_chunks, T))
+        for seq_idx in range(0, T, seq_chunk_size):
+            seq_slice = slice(seq_idx, min(seq_idx + seq_chunk_size, T))
 
             # (batch-chunks, seq_chunks, T')
             scores = query[batch_slice, seq_slice] @ key[batch_slice].transpose(-1, -2)
 
             if mask is not None:
                 # (batch-chunks?, seq_chunks, T')
-                mask_chunk = mask[seq_slice] if mask.ndim == 2 else mask[batch_slice, seq_slice]
+                mask_chunk = mask[..., seq_slice, :]
 
                 # in-place
                 if mask_chunk.dtype == torch.bool:
@@ -58,16 +49,12 @@ def standard_attention(
                     scores += mask_chunk
 
             # (batch-chunks, seq_chunks, T')
-            attention = scores.softmax(dim=-1)
+            # attention = scores.softmax(dim=-1)
+            scores -= scores.amax(dim=-1, keepdim=True)
+            attention = scores.exp_()
+            attention /= attention.sum(dim=-1, keepdim=True)
 
             # (batch-chunks, seq_chunks, T')
-            out_chunk = attention @ value[batch_slice]
-
-            if out is not None:
-                out[batch_slice, seq_slice] = out_chunk
-            else:
-                return out_chunk
-
-    assert out is not None
+            torch.bmm(attention, value[batch_slice], out=out[batch_slice, seq_slice])
 
     return out
